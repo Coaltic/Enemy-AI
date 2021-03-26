@@ -96,6 +96,7 @@ public class AI : MonoBehaviour
             SwitchState(State.Patrolling);
         }
         enemy.SetDestination(points[4].position);
+        patrolDestinationPoint = 0;
 
     }
 
@@ -144,6 +145,7 @@ public class AI : MonoBehaviour
                 if (distance >= viewDistance)
                 {
                     lastPlayerLocation = player.gameObject.transform.position;
+                    targetTime = 4.0f;
                     SwitchState(State.Searching);
                 }
                 /*if (distance <= 2)
