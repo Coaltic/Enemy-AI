@@ -7,8 +7,6 @@ public class AI : MonoBehaviour
 {
     enum State
     {
-        Alive,
-        Dead,
         Patrolling,
         Chasing,
         Searching,
@@ -16,49 +14,43 @@ public class AI : MonoBehaviour
         Retreating
     }
 
-    private State state;
+    private State enemyState;
 
     public Animator animator;
-
     public NavMeshAgent enemy;
+
+    public GameObject player;
+    public Transform[] points;
+
+    public int patrolDestinationPoint;
+    public int patrolDestinationAmount;
+    public int viewDistance = 10;
+    public int attackDistance = 3;
+    public float distance;
+    public float searchTime = 8.0f;
+
     private Vector3 lastPlayerLocation;
     private Vector3 playerLocation;
     private Vector3 enemyLocation;
-    public GameObject player;
-
-    public Transform[] points;
-    public int patrolDestinationPoint;
-    public int patrolDestinationAmount;
-    //public float remaingDistance = 0.5f;
-    public int viewDistance = 15;
-    public float distance;
-
-    //public bool Running = false;
-
-    public float searchTime = 8.0f;
 
     void Start()
     {
-        
         enemy = GetComponent<NavMeshAgent>();
         patrolDestinationPoint = 0;
         SwitchState(State.Patrolling);
-
     }
 
     void SwitchState(State newState)
     {
-        state = newState;
+        enemyState = newState;
     }
 
-    // Update is called once per frame
     void Patrolling()
     {
         animator.SetBool("Running", false);
         animator.SetBool("Searching", false);
         animator.SetBool("Attacking", false);
         animator.SetBool("Walking", true);
-
 
         playerLocation = player.gameObject.transform.position;
         enemy.SetDestination(points[patrolDestinationPoint].position);
@@ -83,7 +75,7 @@ public class AI : MonoBehaviour
 
         enemy.SetDestination(playerLocation);
 
-        if (distance <= 3)
+        if (distance <= attackDistance)
         {
             SwitchState(State.Attacking);
         }
@@ -98,21 +90,22 @@ public class AI : MonoBehaviour
 
     void Searching()
     {
-        animator.SetBool("Running", false);
-        animator.SetBool("Searching", true);
-        animator.SetBool("Attacking", false);
-        animator.SetBool("Walking", false);
-
         enemy.SetDestination(lastPlayerLocation);
 
-        searchTime -= Time.deltaTime;
-
-        if (searchTime <= 0.0f)
+        if ((enemyLocation.x == lastPlayerLocation.x) && (enemyLocation.z == lastPlayerLocation.z))
         {
-            SwitchState(State.Retreating);
+            animator.SetBool("Running", false);
+            animator.SetBool("Searching", true);
+            animator.SetBool("Attacking", false);
+            animator.SetBool("Walking", false);
+
+            searchTime -= Time.deltaTime;
+
+            if (searchTime <= 0.0f)
+            {
+                SwitchState(State.Retreating);
+            }
         }
-
-
     }
 
     void Retreating()
@@ -122,16 +115,12 @@ public class AI : MonoBehaviour
         animator.SetBool("Attacking", false);
         animator.SetBool("Walking", false);
 
-
-
         enemy.SetDestination(points[patrolDestinationPoint].position);
 
         if ((enemyLocation.x == points[patrolDestinationPoint].position.x) && (enemyLocation.z == points[patrolDestinationPoint].position.z))
         {
             SwitchState(State.Patrolling);
         }
-
-        
     }
 
     void Attacking()
@@ -149,24 +138,14 @@ public class AI : MonoBehaviour
         enemyLocation = enemy.transform.position;
         playerLocation = player.gameObject.transform.position;
         distance = Vector3.Distance(playerLocation, enemyLocation);
-        
 
-        if (distance <= viewDistance && distance > 3)
+        if (distance <= viewDistance && distance > attackDistance)
         {
            SwitchState(State.Chasing);
-           
         }
 
-        switch (state)
+        switch (enemyState)
         {
-            case State.Alive:
-                Debug.Log("State: Alive");
-                break;
-
-            case State.Dead:
-                Debug.Log("State: Dead");
-                break;
-
             case State.Patrolling:
                 Debug.Log("State: Patrolling");
                 Patrolling();
@@ -188,10 +167,9 @@ public class AI : MonoBehaviour
                 break;
 
             case State.Attacking:
-                Debug.Log("State: Attakcing");
+                Debug.Log("State: Attacking");
                 Attacking();
                 break;
-
         }
     }
 
